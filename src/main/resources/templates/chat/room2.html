@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Websocket Chat</title>
+  <meta charset="utf-8">
+</head>
+<body>
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      <h3>채팅방 리스트</h3>
+    </div>
+  </div>
+  <div class="input-group">
+    <div class="input-group-prepend">
+      <label class="input-group-text">방제목</label>
+    </div>
+    <input type="text" class="form-control" id="roomName">
+    <div class="input-group-append">
+      <button class="btn btn-primary" type="button" onclick="createRoom()">채팅방 개설</button>
+    </div>
+  </div>
+  <ul id="roomList">
+  </ul>
+</div>
+<!-- JavaScript -->
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script>
+  $(document).ready(function () {
+    // HTML 문서를 로드할 때마다 실행합니다.
+    roomPage();
+  })
+
+  function roomPage() {
+    $('#roomList').empty();
+
+    $.ajax({
+      type: "GET",
+      url: "/chat/rooms",
+      data: {},
+      success: function (response) {
+        console.log(response);
+        for (let i = 0; i < response.length; i++) {
+          let roomName = response[i].name;
+          let roomId = response[i].roomId;
+          let tempHtml = makeHtml(roomId, roomName);
+          $('#roomList').append(tempHtml);
+        }
+      }
+    });
+  }
+
+  function makeHtml(roomId, roomName) {
+    return `<li class="list-group-item list-group-item-action" onclick="enterRoom('${roomId}')">
+                ${roomName}
+            </li>`
+  }
+
+  function enterRoom(roomId) {
+    let sender = prompt('대화명을 입력해 주세요.');
+    localStorage.setItem('wschat.sender',sender);
+    localStorage.setItem('wschat.roomId',roomId);
+    location.href="/chat/room/enter/"+roomId;
+  }
+
+  function createRoom() {
+    let roomName = $('#roomName').val();
+
+    $.ajax({
+      type: "POST",
+      url: "/chat/room",
+      data: {
+        name : roomName
+      },
+      success: function (response) {
+        let roomId = response.roomId;
+        let roomName = response.name;
+        let tempHtml = makeHtml(roomId, roomName);
+        $('#roomList').append(tempHtml);
+        window.location.reload();
+      }
+    });
+  }
+</script>
+</body>
+</html>

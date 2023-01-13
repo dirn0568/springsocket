@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <h1>내 채팅 목록</h1>
+
+    <div style="display:flex; width:60rem; height:50rem;">
+        <div id="chatList" style="width:20rem; height:50rem; text-align:center; border: 1px solid #FF0000;">
+        </div>
+
+        <div id="chat" style="width:30rem; height:50rem; margin-left:5rem; border: 1px solid #00FF00;">
+        </div>
+    </div>
+
+
+    <input type="text" class="form-control" id="sendText">
+    <div>
+        <button class="btn btn-primary" type="button" onclick="sendMessage()">보내기</button>
+    </div>
+
+</body>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script src="/webjars/sockjs-client/1.1.2/sockjs.min.js"></script>
+<script src="/webjars/stomp-websocket/2.3.3-1/stomp.min.js"></script>
+<script>
+    let roomId = localStorage.getItem('roomId');
+    let sender = localStorage.getItem('sender');
+
+    $(document).ready(function () {
+        // HTML 문서를 로드할 때마다 실행합니다.
+        Page();
+    })
+
+    function Page() {
+        const auth = getToken();
+
+        $('#chatList').empty();
+        $('#chat').empty();
+        $.ajax({
+            type:"GET",
+            url:"/chat/rooms",
+            data:{
+                roomId : roomId,
+            },
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Authorization", auth);
+            },
+            success: function (response) {
+                for (let i = 0; i<response['Members'].length; i++) {
+                    let sender = response['Members'][i].name;
+                    let chatList = makeHtmlChatList(sender);
+                    $('#chatList').append(chatList);
+                }
+
+                for (let i = 0; i<response['ChatMsgs'].length; i++) {
+                    let msg = response['ChatMsgs'][i].msg;
+                    let msgList = makeHtmlMsgList(msg)
+                    $('#chat').append(msgList);
+                }
+            }
+        })
+    }
+
+    let sock = new SockJS("/ws-stomp"); //new SockJS()를 사용하여 아까 핸들러에서 지정해준 endPoint를 사용하여 연결을 해준다.
+    let ws = Stomp.over(sock);
+
+    //let participant = localStorage.getItem('participant');
+
+    ws.connect({}, function(frame) { // ws.subscribe("/sub/chat/room/"+roomId) 를 구독한 상태
+        ws.subscribe("/sub/chat/room/"+roomId, function(message) {
+            alert(message);
+            console.log(message);
+            let receive = JSON.parse(message.body);
+            receiveMessage(receive);
+        }); // 첫번째 인자는 spring controller mapping ("/pub"은 spring controller로 보낸다는 stomp perfix 규칙 즉 "/pub"뒤가 진짜 mapping 주소)// 두번째 인자는 서버로 보낼 때 추가하고싶은 stomp 헤더이다.// 세번째 인자는 서버로 보낼 때 추가하고 싶은 stomp 바디이다. 서버 컨트롤러에서는 mapping된 함수의 String 인자로 json stringify된 문자열을 받을 수 있다//ws.send("/pub/chat/message", {}, JSON.stringify({roomId:roomId, sender:sender}));
+    }, function(error) {
+        alert("error "+error);
+    });
+
+    function sendMessage() {
+        let sendText = $('#sendText').val();
+        ws.send("/pub/chat/message", {}, JSON.stringify({roomId:roomId, sender:sender, message:sendText})); //receiver:participant,
+    }
+
+    function receiveMessage(receive) {
+        let tempHtml;
+        let senderMember = receive.sender;
+        if (sender == senderMember) {
+            tempHtml = makeHtmlMessageRight(receive);
+        } else {
+            tempHtml = makeHtmlMessageLeft(receive);
+        }
+        $('#chat').append(tempHtml);
+    }
+
+    function makeHtmlChatList(sender) {
+        return `<div style="width:20rem; height:5rem; background:#00FF00; line-height:5rem;">
+                    ${sender}
+                </div>`
+    }
+
+    function makeHtmlMsgList(msg) {
+        return `<div>
+                    ${msg}
+                </div>`
+    }
+
+    function makeHtmlMessageRight(sender) {
+        return `<div style="text-align:right;">
+                    ${sender.message}
+                </div>`
+    }
+
+    function makeHtmlMessageLeft(sender) {
+        return `<div style="text-align:left;">
+                    ${sender.message}
+                </div>`
+    }
+
+    function  getToken() {
+        let cName = 'Authorization' + '=';
+        let cookieData = document.cookie;
+        let cookie = cookieData.indexOf('Authorization');
+        let auth = '';
+        if(cookie !== -1){
+            cookie += cName.length;
+            let end = cookieData.indexOf(';', cookie);
+            if(end === -1)end = cookieData.length;
+            auth = cookieData.substring(cookie, end);
+        }
+        return auth;
+        // kakao 로그인 사용한 경우 Bearer 추가
+        //if(auth.indexOf('Bearer') === -1 && auth !== ''){
+        //auth = 'Bearer ' + auth;
+        //}
+    }
+</script>
+
+</html>
