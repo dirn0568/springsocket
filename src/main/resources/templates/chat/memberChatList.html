@@ -4,28 +4,57 @@
     <meta charset="UTF-8">
     <title>Title</title>
 </head>
+
+<style>
+    *{ margin: 0; padding: 0; }
+
+    /*.chat_wrap .header { font-size: 14px; padding: 15px 0; background: #F18C7E; color: white; text-align: center;  }*/
+
+    /*.chat_wrap .chat { padding-bottom: 80px; }*/
+    /*.chat_wrap .chat ul { width: 100%; list-style: none; }*/
+    /*.chat_wrap .chat ul li { width: 100%; }*/
+    /*.chat_wrap .chat ul li.left { text-align: left; }*/
+    /*.chat_wrap .chat ul li.right { text-align: right; }*/
+
+    /*.chat_wrap .chat ul li > div { font-size: 13px;  }*/
+    /*.chat_wrap .chat ul li > div.sender { margin: 10px 20px 0 20px; font-weight: bold; }*/
+    /*.chat_wrap .chat ul li > div.message { display: inline-block; word-break:break-all; margin: 5px 20px; max-width: 75%; border: 1px solid #888; padding: 10px; border-radius: 5px; background-color: #FCFCFC; color: #555; text-align: left; }*/
+
+    .input-div {position: absolute; bottom:0; width:100%; background-color: #FFF; text-align: center; border-top: 1px solid #F18C7E; }
+    .input-div > textarea { width: 100%; height:80px; border: none;}
+
+    /*.format { display: none; }*/
+
+</style>
+
 <body>
     <h1>내 채팅 목록</h1>
 
-    <div style="display:flex; width:60rem; height:50rem;">
+    <div style="display:flex; width:70rem; height:50rem;">
         <div id="chatList" style="width:20rem; height:50rem; text-align:center; border: 1px solid #FF0000;">
         </div>
 
-        <div id="chat" style="width:30rem; height:50rem; margin-left:5rem; border: 1px solid #00FF00;">
+        <div style="position:relative; width:50rem; height:50rem; margin-left:5rem; border: 1px solid #00FF00;">
+            <div id="chat">
+            </div>
+
+            <div class="input-div">
+                <textarea placeholder="Press Enter for send message."></textarea>
+            </div>
+            <input type="text" class="form-control" id="sendText">
+            <div>
+                <button class="btn btn-primary" type="button" onclick="sendMessage()">보내기</button>
+            </div>
         </div>
     </div>
 
-
-    <input type="text" class="form-control" id="sendText">
-    <div>
-        <button class="btn btn-primary" type="button" onclick="sendMessage()">보내기</button>
-    </div>
 
 </body>
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
 <script src="/webjars/sockjs-client/1.1.2/sockjs.min.js"></script>
 <script src="/webjars/stomp-websocket/2.3.3-1/stomp.min.js"></script>
 <script>
+    //
     let roomId = localStorage.getItem('roomId');
     let sender = localStorage.getItem('sender');
 
@@ -37,8 +66,8 @@
     function Page() {
         const auth = getToken();
 
-        $('#chatList').empty();
-        $('#chat').empty();
+        // $('#chatList').empty();
+        // $('#chat').empty();
         $.ajax({
             type:"GET",
             url:"/chat/rooms",
@@ -71,8 +100,6 @@
 
     ws.connect({}, function(frame) { // ws.subscribe("/sub/chat/room/"+roomId) 를 구독한 상태
         ws.subscribe("/sub/chat/room/"+roomId, function(message) {
-            alert(message);
-            console.log(message);
             let receive = JSON.parse(message.body);
             receiveMessage(receive);
         }); // 첫번째 인자는 spring controller mapping ("/pub"은 spring controller로 보낸다는 stomp perfix 규칙 즉 "/pub"뒤가 진짜 mapping 주소)// 두번째 인자는 서버로 보낼 때 추가하고싶은 stomp 헤더이다.// 세번째 인자는 서버로 보낼 때 추가하고 싶은 stomp 바디이다. 서버 컨트롤러에서는 mapping된 함수의 String 인자로 json stringify된 문자열을 받을 수 있다//ws.send("/pub/chat/message", {}, JSON.stringify({roomId:roomId, sender:sender}));
