@@ -30,6 +30,7 @@ public class ChatRoomController {
 
     @GetMapping("/room")
     public String rooms(Model model) {
+        //
         return "chat/room2";
     }
 

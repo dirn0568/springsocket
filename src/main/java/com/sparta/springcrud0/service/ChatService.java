@@ -18,6 +18,9 @@ public class ChatService {
     private final ChatMsgRepository chatMsgRepository;
     private final MemberRepository memberRepository;
     private final MemberChatRoomsRepository memberChatRoomsRepository;
+
+
+
     @Transactional // 이거를 빼면 데이터 생성이 안되나????
     public ChatRoom createChatRoom(Member memberOwner, Member memberParticipant) {
         if (memberChatRoomsRepository.findByMember1AndMember2(memberOwner, memberParticipant).isPresent()
